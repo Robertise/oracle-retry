@@ -6,7 +6,6 @@ from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 
-# ─── Logging ───────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -14,7 +13,6 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ─── OCI Config ────────────────────────────────────────────
 OCI_USER        = os.environ.get("OCI_USER", "")
 OCI_FINGERPRINT = os.environ.get("OCI_FINGERPRINT", "")
 OCI_TENANCY     = os.environ.get("OCI_TENANCY", "")
@@ -22,7 +20,6 @@ OCI_REGION      = os.environ.get("OCI_REGION", "ap-singapore-1")
 OCI_KEY_CONTENT = os.environ.get("OCI_KEY_CONTENT", "")
 COMPARTMENT_ID  = os.environ.get("COMPARTMENT_ID", "")
 SUBNET_ID       = os.environ.get("SUBNET_ID", "")
-IMAGE_ID        = os.environ.get("IMAGE_ID", "ocid1.image.oc1.ap-singapore-1.aaaaaaaavlmcv5sid7y5lltppspklnndixe5lklspoa3mypvouaykmdrzhuq")
 
 INSTANCE_NAME  = "openclaw-vm"
 RETRY_INTERVAL = 700
@@ -33,7 +30,8 @@ status = {
     "last_try": None,
     "last_error": None,
     "success": False,
-    "instance_id": None
+    "instance_id": None,
+    "image_id_found": None
 }
 
 class PingHandler(BaseHTTPRequestHandler):
@@ -62,6 +60,27 @@ def setup_oci():
     log.info("OCI credentials đã setup xong")
     return True
 
+def find_arm_image(compute, compartment_id):
+    """Tự tìm image Ubuntu 22.04 ARM mới nhất"""
+    log.info("Đang tìm image Ubuntu 22.04 ARM...")
+    images = compute.list_images(
+        compartment_id,
+        operating_system="Canonical Ubuntu",
+        operating_system_version="22.04",
+        shape="VM.Standard.A1.Flex",
+        sort_by="TIMECREATED",
+        sort_order="DESC"
+    ).data
+
+    if not images:
+        log.error("Không tìm thấy image Ubuntu 22.04 ARM nào!")
+        return None
+
+    image = images[0]
+    log.info(f"Tìm thấy image: {image.display_name} — {image.id}")
+    status["image_id_found"] = image.id
+    return image.id
+
 def try_create_instance():
     status["attempts"] += 1
     status["last_try"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -78,13 +97,20 @@ def try_create_instance():
             "key_file": KEY_PATH,
         }
 
-        # Lấy tên AD thật từ API
+        compute  = oci.core.ComputeClient(config)
         identity = oci.identity.IdentityClient(config)
-        ads = identity.list_availability_domains(COMPARTMENT_ID).data
-        ad_name = ads[0].name
-        log.info(f"Dùng Availability Domain: {ad_name}")
 
-        compute = oci.core.ComputeClient(config)
+        # Lấy AD name thật
+        ads     = identity.list_availability_domains(COMPARTMENT_ID).data
+        ad_name = ads[0].name
+        log.info(f"Availability Domain: {ad_name}")
+
+        # Tự tìm image ARM đúng
+        image_id = find_arm_image(compute, COMPARTMENT_ID)
+        if not image_id:
+            status["last_error"] = "Không tìm thấy image Ubuntu 22.04 ARM"
+            return False
+
         details = oci.core.models.LaunchInstanceDetails(
             compartment_id=COMPARTMENT_ID,
             availability_domain=ad_name,
@@ -96,7 +122,7 @@ def try_create_instance():
             ),
             source_details=oci.core.models.InstanceSourceViaImageDetails(
                 source_type="image",
-                image_id=IMAGE_ID
+                image_id=image_id
             ),
             create_vnic_details=oci.core.models.CreateVnicDetails(
                 subnet_id=SUBNET_ID,
