@@ -6,6 +6,10 @@ import logging
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+from dotenv import load_dotenv
+
+# ─── Load environment variables từ .env ────────────────────
+load_dotenv()
 
 # ─── Logging ───────────────────────────────────────────────
 logging.basicConfig(
