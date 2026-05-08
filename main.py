@@ -31,7 +31,7 @@ SUBNET_ID       = os.environ.get("SUBNET_ID", "PASTE_SUBNET_ID_HERE")
 IMAGE_ID        = os.environ.get("IMAGE_ID", "ocid1.image.oc1.ap-singapore-1.aaaaaaaavlmcv5sid7y5lltppspklnndixe5lklspoa3mypvouaykmdrzhuq")
 
 INSTANCE_NAME   = "openclaw-vm"
-RETRY_INTERVAL  = 300  # 5 phút
+RETRY_INTERVAL  = 600  # 5 phút
 KEY_PATH        = "/tmp/oci_key.pem"
 
 # ─── Status tracking ───────────────────────────────────────
