@@ -130,7 +130,7 @@ def try_create_instance():
         status["success"] = True
         return True
     else:
-        error_msg = result.stderr[:200] if result.stderr else result.stdout[:200]
+        error_msg = (result.stderr + result.stdout)[:300]
         status["last_error"] = error_msg
         log.warning(f"❌ Thất bại: {error_msg}")
         log.info(f"Thử lại sau {RETRY_INTERVAL // 60} phút...")
