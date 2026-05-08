@@ -1,3 +1,1 @@
-oci-cli
-python-dotenv
-
+oci
