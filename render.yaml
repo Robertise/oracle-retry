@@ -1,0 +1,23 @@
+services:
+  - type: worker
+    name: oracle-retry
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: OCI_USER
+        sync: false
+      - key: OCI_FINGERPRINT
+        sync: false
+      - key: OCI_TENANCY
+        sync: false
+      - key: OCI_REGION
+        value: ap-singapore-1
+      - key: OCI_KEY_CONTENT
+        sync: false
+      - key: COMPARTMENT_ID
+        sync: false
+      - key: SUBNET_ID
+        sync: false
+      - key: IMAGE_ID
+        value: ocid1.image.oc1.ap-singapore-1.aaaaaaaavlmcv5sid7y5lltppspklnndixe5lklspoa3mypvouaykmdrzhuq
