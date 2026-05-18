@@ -22,7 +22,7 @@ COMPARTMENT_ID  = os.environ.get("COMPARTMENT_ID", "")
 SUBNET_ID       = os.environ.get("SUBNET_ID", "")
 
 INSTANCE_NAME  = "openclaw-vm"
-RETRY_INTERVAL = 700
+RETRY_INTERVAL = 650
 KEY_PATH       = "/tmp/oci_key.pem"
 
 status = {
@@ -117,8 +117,8 @@ def try_create_instance():
             display_name=INSTANCE_NAME,
             shape="VM.Standard.A1.Flex",
             shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
-                ocpus=2,
-                memory_in_gbs=12
+                ocpus=1,
+                memory_in_gbs=6
             ),
             source_details=oci.core.models.InstanceSourceViaImageDetails(
                 source_type="image",
